@@ -1,0 +1,16 @@
+# Companies to always monitor, regardless of the general job boards.
+# job_board_url is optional — add it if you know the direct careers page URL.
+# Leave job_board_url blank and the scraper will search LinkedIn Israel for that company name.
+
+companies:
+  - name: Mobileye
+    job_board_url: https://www.mobileye.com/careers/
+
+  - name: Apple
+    job_board_url: https://jobs.apple.com/en-us/search?location=israel-ISR
+
+  - name: Rafael
+    job_board_url:
+
+  - name: Elbit Systems
+    job_board_url:

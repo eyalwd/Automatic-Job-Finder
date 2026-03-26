@@ -1,0 +1,13 @@
+.env
+jobs.db
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+email_preview.html
+CV.md
+Eyal Wodner CV.pdf
+.playwright/
+.venv/
+.claude/
