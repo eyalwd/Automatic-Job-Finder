@@ -20,6 +20,7 @@ def build_html(jobs: list[dict]) -> str:
         <tr>
             <td><a href="{job['url']}" style="color:#1a73e8;text-decoration:none;">{job['title']}</a></td>
             <td>{job['company']}</td>
+            <td style="color:#888;font-size:12px;">{job.get('source', '')}</td>
             <td style="text-align:center;font-weight:bold;color:#1a73e8;">{job['cv_score']}</td>
             <td style="text-align:center;font-weight:bold;color:#0f9d58;">{job['job_score']}</td>
             <td style="color:#555;">{job['rationale_cv']}</td>
@@ -63,6 +64,7 @@ def build_html(jobs: list[dict]) -> str:
           <tr>
             <th>Position</th>
             <th>Company</th>
+            <th>Source</th>
             <th style="text-align:center;">CV Score</th>
             <th style="text-align:center;">Job Score</th>
             <th>CV Screen Rationale</th>
@@ -130,6 +132,7 @@ if __name__ == "__main__":
         {
             "title": "Algorithm Engineer — RADAR",
             "company": "Elbit Systems",
+            "source": "Elbit Systems",
             "url": "https://example.com/job/elbit-radar",
             "description": "Develop detection and tracking algorithms for airborne RADAR systems.",
             "cv_score": 91,
@@ -140,6 +143,7 @@ if __name__ == "__main__":
         {
             "title": "Signal Processing Engineer",
             "company": "Mobileye",
+            "source": "Mobileye",
             "url": "https://example.com/job/mobileye-dsp",
             "description": "Design DSP pipelines for autonomous driving sensor fusion.",
             "cv_score": 80,
@@ -150,6 +154,7 @@ if __name__ == "__main__":
         {
             "title": "Acoustic Systems Engineer",
             "company": "Rafael Advanced Defense Systems",
+            "source": "Drushim",
             "url": "https://example.com/job/rafael-acoustic",
             "description": "R&D of underwater acoustic detection and classification systems.",
             "cv_score": 95,
@@ -160,7 +165,7 @@ if __name__ == "__main__":
     ]
 
     for j in dummy_jobs:
-        insert_job(conn, j["title"], j["company"], j["url"], j["description"])
+        insert_job(conn, j["title"], j["company"], j["url"], j["description"], source=j["source"])
         update_match(conn, j["url"], j["cv_score"], j["job_score"], j["rationale_cv"], j["rationale_job"])
 
     run_notifier(conn)

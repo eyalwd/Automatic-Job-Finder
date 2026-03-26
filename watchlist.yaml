@@ -4,13 +4,16 @@
 
 companies:
   - name: Mobileye
-    job_board_url: https://www.mobileye.com/careers/
+    job_board_url: https://careers.mobileye.com/jobs
 
   - name: Apple
     job_board_url: https://jobs.apple.com/en-us/search?location=israel-ISR
 
-  - name: Rafael
-    job_board_url:
+  # - name: Rafael
+  #   job_board_url:
 
-  - name: Elbit Systems
-    job_board_url:
+  # - name: Elbit Systems
+  #   job_board_url:
+
+  # - name: IAI
+  #   job_board_url:
