@@ -853,9 +853,9 @@ class WatchlistScraper(JobScraper):
 #   JobMasterScraper  — triggered bot-detection
 #   WellfoundScraper  — triggered bot-detection
 #   AllJobsScraper    — hard-blocked by Radware WAF even with real browser
+#   DrushimScraper   — only a few jobs and often not relevent
 ALL_SCRAPERS: list[type[JobScraper]] = [
     GoozaliScraper,
-    DrushimScraper,
     WatchlistScraper,
 ]
 

@@ -9,6 +9,22 @@ companies:
   - name: Apple
     job_board_url: https://jobs.apple.com/en-us/search?location=israel-ISR
 
+  - name: Quantum Machines
+    job_board_url: https://qm.teamme.link
+  
+  - name: classiq
+    job_board_url: https://www.classiq.io/careers-page
+
+  - name: vayyar
+    job_board_url: https://vayyar.com/?uael-modal-action=ae58399
+
+  - name: qualcomm
+    job_board_url: https://careers.qualcomm.com/careers?start=0&location=Israel&pid=446717229429&sort_by=distance&filter_include_remote=0
+
+  - name: Google
+    job_board_url: https://www.google.com/about/careers/applications/jobs/results?location=Israel&target_level=ADVANCED&target_level=MID&target_level=EARLY&degree=BACHELORS&employment_type=FULL_TIME#!t=jo&jid=127025001&
+
+
   # - name: Rafael
   #   job_board_url:
 
