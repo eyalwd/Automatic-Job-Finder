@@ -98,6 +98,12 @@ def mark_notified(conn: sqlite3.Connection, url: str) -> None:
     conn.commit()
 
 
+def reset_all_status(conn: sqlite3.Connection) -> int:
+    cursor = conn.execute("UPDATE jobs SET status = 'new'")
+    conn.commit()
+    return cursor.rowcount
+
+
 if __name__ == "__main__":
     import sys
     conn = get_connection()

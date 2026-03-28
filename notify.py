@@ -124,49 +124,5 @@ def run_notifier(conn) -> None:
 if __name__ == "__main__":
     conn = get_connection()
     init_db(conn)
-
-    # Insert dummy data so we can preview the email without scrapers/matcher
-    from db import insert_job, update_match
-
-    dummy_jobs = [
-        {
-            "title": "Algorithm Engineer — RADAR",
-            "company": "Elbit Systems",
-            "source": "Elbit Systems",
-            "url": "https://example.com/job/elbit-radar",
-            "description": "Develop detection and tracking algorithms for airborne RADAR systems.",
-            "cv_score": 91,
-            "job_score": 85,
-            "rationale_cv": "Candidate's RADAR algorithm work and EE degree are a direct match.",
-            "rationale_job": "Strong fit; military background may require security clearance verification.",
-        },
-        {
-            "title": "Signal Processing Engineer",
-            "company": "Mobileye",
-            "source": "Mobileye",
-            "url": "https://example.com/job/mobileye-dsp",
-            "description": "Design DSP pipelines for autonomous driving sensor fusion.",
-            "cv_score": 80,
-            "job_score": 76,
-            "rationale_cv": "Signal processing expertise is well-aligned; ADAS domain is new.",
-            "rationale_job": "Transferable skills but lacks autonomous driving experience.",
-        },
-        {
-            "title": "Acoustic Systems Engineer",
-            "company": "Rafael Advanced Defense Systems",
-            "source": "Drushim",
-            "url": "https://example.com/job/rafael-acoustic",
-            "description": "R&D of underwater acoustic detection and classification systems.",
-            "cv_score": 95,
-            "job_score": 90,
-            "rationale_cv": "Exact match — SONAR expertise, beamforming, threat classification.",
-            "rationale_job": "Exceptional fit across all dimensions; strong likelihood of offer.",
-        },
-    ]
-
-    for j in dummy_jobs:
-        insert_job(conn, j["title"], j["company"], j["url"], j["description"], source=j["source"])
-        update_match(conn, j["url"], j["cv_score"], j["job_score"], j["rationale_cv"], j["rationale_job"])
-
     run_notifier(conn)
     conn.close()
