@@ -687,13 +687,94 @@ class WatchlistScraper(JobScraper):
         # Accept if last segment has digits, UUID pattern, or is long (slug)
         return bool(re.search(r"\d", last) or re.fullmatch(r"[0-9a-f\-]{20,}", last) or len(last) >= 20)
 
+    async def _scrape_google_careers(self, page: Page, company: str) -> list[dict]:
+        """
+        Google Careers server-renders job cards into the HTML.
+        Each card contains a <div jsdata="Aiqs8c;{job_id};$N"> attribute
+        from which we extract the job ID and title via DOM queries.
+        """
+        jobs: list[dict] = []
+        seen: set[str] = set()
+        _BASE = "https://www.google.com/about/careers/applications"
+
+        landing = (
+            f"{_BASE}/jobs/results?location=Israel"
+            "&target_level=ADVANCED&target_level=MID&target_level=EARLY"
+            "&degree=BACHELORS&employment_type=FULL_TIME"
+        )
+        try:
+            await page.goto(landing, wait_until="networkidle", timeout=60_000)
+        except Exception:
+            pass
+
+        # ---------------------------------------------------------------
+        # Extract jobs from server-rendered DOM.
+        # Google renders job cards as <div jsdata="Aiqs8c;{job_id};$N">.
+        # ---------------------------------------------------------------
+        async def _extract_page_jobs() -> int:
+            items = await page.evaluate("""
+                () => {
+                    const results = [];
+                    const seenIds = new Set();
+                    document.querySelectorAll('[jsdata*="Aiqs8c;"]').forEach(card => {
+                        const jsdata = card.getAttribute('jsdata') || '';
+                        const m = jsdata.match(/Aiqs8c;(\\d+)/);
+                        if (!m) return;
+                        const jobId = m[1];
+                        if (seenIds.has(jobId)) return;
+                        seenIds.add(jobId);
+                        const link = card.querySelector('a[href*="/jobs/results/"]');
+                        let title = link ? link.innerText.trim() : '';
+                        if (!title) {
+                            const h = card.querySelector('h3, h2, [role="heading"]');
+                            title = h ? h.innerText.trim() : '';
+                        }
+                        if (!title)
+                            title = card.innerText.trim().split('\\n')[0].trim();
+                        if (jobId && title) results.push({jobId, title});
+                    });
+                    return results;
+                }
+            """)
+            added = 0
+            for item in items:
+                job_id = item.get("jobId", "")
+                title = item.get("title", "").strip()
+                if not title or not job_id:
+                    continue
+                url = f"{_BASE}/jobs/results/{job_id}"
+                if url not in seen:
+                    seen.add(url)
+                    jobs.append({"title": title, "company": company, "url": url})
+                    added += 1
+            return added
+
+        await _extract_page_jobs()
+
+        # Paginate via URL ?page=N — each page is server-rendered independently
+        for page_num in range(2, 10):
+            try:
+                await page.goto(
+                    landing + f"&page={page_num}",
+                    wait_until="networkidle", timeout=40_000,
+                )
+            except Exception:
+                pass
+            if await _extract_page_jobs() == 0:
+                break
+
+        return jobs
+
     async def _scrape_board(self, page: Page, company: str, url: str) -> list[dict]:
         """
         Strategy (in order):
-        1. Intercept JSON API responses — works for custom backends (Mobileye) and most modern ATS.
-        2. ATS-specific DOM selectors (Greenhouse, Workday, Lever, SmartRecruiters).
-        3. All links that pass the individual-job-page URL heuristic.
+        1. Google Careers dedicated handler.
+        2. Intercept JSON API responses — works for custom backends (Mobileye) and most modern ATS.
+        3. ATS-specific DOM selectors (Greenhouse, Workday, Lever, SmartRecruiters).
+        4. All links that pass the individual-job-page URL heuristic.
         """
+        if "google.com/about/careers" in url:
+            return await self._scrape_google_careers(page, company)
         jobs: list[dict] = []
         api_jobs: list[dict] = []
 
@@ -733,6 +814,17 @@ class WatchlistScraper(JobScraper):
         except Exception:
             pass  # timeout ok — data calls fire during load
         await page.wait_for_timeout(5000)
+
+        # Scroll to bottom incrementally to trigger lazy-loading (e.g. Google Careers SPA)
+        last_height = await page.evaluate("document.body.scrollHeight")
+        for _ in range(10):
+            await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+            await page.wait_for_timeout(1500)
+            new_height = await page.evaluate("document.body.scrollHeight")
+            if new_height == last_height:
+                break
+            last_height = new_height
+
         page.remove_listener("response", _on_response)
 
         if api_jobs:
@@ -746,6 +838,7 @@ class WatchlistScraper(JobScraper):
             "[data-automation-id='jobTitle']",                # Workday
             ".js-jobs-list-item a",                           # SmartRecruiters
             ".posting-title a", ".postings-group .posting a", # Lever
+            "a[href*='/jobs/results/']",                       # Google Careers
         ]
         for selector in ats_selectors:
             for link in await page.query_selector_all(selector):

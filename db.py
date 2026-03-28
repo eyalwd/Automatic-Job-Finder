@@ -85,10 +85,10 @@ def get_new_matches(conn: sqlite3.Connection, threshold: int = 75) -> list[dict]
         """
         SELECT title, company, source, url, cv_score, job_score, rationale_cv, rationale_job
         FROM jobs
-        WHERE job_score >= ? AND status = 'new'
+        WHERE (job_score >= ? OR cv_score >= ?) AND status = 'new'
         ORDER BY job_score DESC
         """,
-        (threshold,),
+        (threshold, threshold),
     ).fetchall()
     return [dict(row) for row in rows]
 
