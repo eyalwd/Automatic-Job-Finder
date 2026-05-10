@@ -765,6 +765,54 @@ class WatchlistScraper(JobScraper):
 
         return jobs
 
+    async def _scrape_cisco_careers(self, page: Page, company: str, url: str) -> list[dict]:
+        """
+        Cisco Careers (Phenom People ATS) — jobs are server-rendered into the DOM.
+        Selector: [data-ph-at-id="job-link"] gives title + href.
+        Pagination: click [data-ph-at-id="pagination-next-link"] until hidden/gone.
+        """
+        jobs: list[dict] = []
+        seen: set[str] = set()
+
+        try:
+            await page.goto(url, wait_until="networkidle", timeout=40_000)
+        except Exception:
+            pass
+        await page.wait_for_timeout(3000)
+
+        async def _extract_page_jobs() -> int:
+            links = await page.query_selector_all('[data-ph-at-id="job-link"]')
+            added = 0
+            for link in links:
+                title = (await link.inner_text()).strip()
+                href = (await link.get_attribute("href") or "").strip()
+                if not title or not href:
+                    continue
+                if href.startswith("/"):
+                    from urllib.parse import urlparse
+                    p = urlparse(url)
+                    href = f"{p.scheme}://{p.netloc}{href}"
+                if href not in seen:
+                    seen.add(href)
+                    jobs.append({"title": title, "company": company, "url": href})
+                    added += 1
+            return added
+
+        await _extract_page_jobs()
+
+        for _ in range(MAX_PAGES - 1):
+            next_btn = await page.query_selector('[data-ph-at-id="pagination-next-link"]')
+            if not next_btn:
+                break
+            is_hidden = await next_btn.evaluate("el => el.style.display === 'none' || el.offsetParent === null")
+            if is_hidden:
+                break
+            await next_btn.click()
+            await page.wait_for_timeout(3000)
+            await _extract_page_jobs()
+
+        return jobs
+
     async def _scrape_board(self, page: Page, company: str, url: str) -> list[dict]:
         """
         Strategy (in order):
@@ -775,6 +823,8 @@ class WatchlistScraper(JobScraper):
         """
         if "google.com/about/careers" in url:
             return await self._scrape_google_careers(page, company)
+        if "careers.cisco.com" in url:
+            return await self._scrape_cisco_careers(page, company, url)
         jobs: list[dict] = []
         api_jobs: list[dict] = []
 
@@ -948,7 +998,7 @@ class WatchlistScraper(JobScraper):
 #   AllJobsScraper    — hard-blocked by Radware WAF even with real browser
 #   DrushimScraper   — only a few jobs and often not relevent
 ALL_SCRAPERS: list[type[JobScraper]] = [
-    GoozaliScraper,
+    # GoozaliScraper,
     WatchlistScraper,
 ]
 
